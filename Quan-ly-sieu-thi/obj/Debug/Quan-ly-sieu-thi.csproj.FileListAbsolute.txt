@@ -1,0 +1,8 @@
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\bin\Debug\Quan-ly-sieu-thi.exe.config
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\bin\Debug\Quan-ly-sieu-thi.exe
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\bin\Debug\Quan-ly-sieu-thi.pdb
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.csproj.AssemblyReference.cache
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.csproj.CoreCompileInputs.cache
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.exe
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.pdb
+D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.exe.config

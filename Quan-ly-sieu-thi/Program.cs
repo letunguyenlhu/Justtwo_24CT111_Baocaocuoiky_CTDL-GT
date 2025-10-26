@@ -67,7 +67,7 @@ public class QuanLySieuThi
     /// </summary>
     public QuanLySieuThi()
     {
-        _khoHang = new Dictionary<string, MatHang>();
+        _khoHang = new Dictionary<string, MatHang>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -189,7 +189,6 @@ public static class ThuVienToHop
     /// </summary>
     public static void LietKeVaInToHop(List<MatHang> danhSachNguon, int m)
     {
-        // <<< THAY ĐỔI >>> N trong hàm này giờ là n (tập con) mà người dùng chọn
         int n_tapCon = danhSachNguon.Count;
 
         if (danhSachNguon == null || m <= 0 || m > n_tapCon)
@@ -268,26 +267,30 @@ public static class TestDataGenerator
     /// </summary>
     public static List<MatHang> Generate(int soLuong)
     {
-        // <<< THAY ĐỔI >>> Giới hạn n < 10000 theo yêu cầu mới
-        if (soLuong >= 10000)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("Cảnh báo: Số lượng N (" + soLuong + ") quá lớn, giảm xuống còn 9999.");
-            soLuong = 9999;
-            Console.ResetColor();
-        }
-
         List<MatHang> danhSach = new List<MatHang>(soLuong);
         for (int i = 0; i < soLuong; i++)
         {
             try
             {
-                // <<< THAY ĐỔI >>> Format mã 4 số cho N < 10000
-                string ma = "MH" + i.ToString("D4");
+                string ma = "MH" + i.ToString("D8");
                 string ten = TenTienTo[_random.Next(TenTienTo.Length)] + " " + TenHauTo[_random.Next(TenHauTo.Length)] + " #" + i;
                 string dvt = DonVi[_random.Next(DonVi.Length)];
                 decimal gia = _random.Next(5000, 500000);
-                int tonKho = _random.Next(10, 1000);
+
+                int tonKho;
+               
+                int coHoi = _random.Next(1, 11); 
+
+                if (coHoi == 1) 
+                {
+                    tonKho = _random.Next(1, 10);
+                }
+                else 
+                {
+                 
+                    tonKho = _random.Next(10, 1000);
+                }
+
                 danhSach.Add(new MatHang(ma, ten, dvt, gia, tonKho));
             }
             catch (Exception ex)
@@ -326,16 +329,17 @@ public class Program
         {
             Console.WriteLine("");
             Console.WriteLine("===== MENU QUẢN LÝ SIÊU THỊ ABC (Đơn giản) =====");
-            int soLuongTrongKho = _quanLySieuThi.DemSoLuong(); // <<< THAY ĐỔI >>>
-            Console.WriteLine("Hiện có " + soLuongTrongKho + " mặt hàng (N_kho = " + soLuongTrongKho + ")."); // <<< THAY ĐỔI >>>
-            Console.WriteLine("1. Thêm mặt hàng mới ");
-            Console.WriteLine("2. Tìm mặt hàng theo Mã");
-            Console.WriteLine("3. Tìm mặt hàng theo Tên");
+            int soLuongTrongKho = _quanLySieuThi.DemSoLuong();
+            Console.WriteLine("Hiện có " + soLuongTrongKho + " mặt hàng (N_kho = " + soLuongTrongKho + ").");
+            Console.WriteLine("1. Thêm mặt hàng mới");
+            Console.WriteLine("2. Tìm mặt hàng theo Mã (hoặc số)");
+            Console.WriteLine("3. Tìm mặt hàng theo Tên (chứa)");
             Console.WriteLine("4. Cập nhật mặt hàng (theo Mã)");
             Console.WriteLine("5. Xóa mặt hàng (theo Mã)");
-            Console.WriteLine("6. Tạo combo"); // <<< THAY ĐỔI >>>
+            Console.WriteLine("6. Tạo combo");
             Console.WriteLine("7. In toàn bộ danh sách");
-            Console.WriteLine("8. Tạo dữ liệu lưu kho (N < 10000)"); // <<< THAY ĐỔI >>>
+            Console.WriteLine("8. Tạo dữ liệu ngẫu nhiên (test)");
+            Console.WriteLine("9. Xem danh sách những Mặt hàng tồn kho thấp");
             Console.WriteLine("0. Thoát");
             Console.Write("Vui lòng chọn chức năng: ");
 
@@ -360,14 +364,18 @@ public class Program
                     XoaMatHang();
                     break;
                 case "6":
-                    LietKeToHop(); // <<< THAY ĐỔI >>> Logic hàm này đã được cập nhật
+                    LietKeToHop();
                     break;
                 case "7":
                     InToanBo();
                     break;
                 case "8":
                     TaoNgauNhienDuLieu();
+                    break;                
+                case "9":
+                    KiemTraTonKhoThap();
                     break;
+
                 case "0":
                     dangChay = false;
                     Console.WriteLine("Đã thoát chương trình.");
@@ -388,23 +396,14 @@ public class Program
     /// </summary>
     private static void TaoNgauNhienDuLieu()
     {
-        // <<< THAY ĐỔI >>> Cập nhật câu hỏi theo N < 10000
-        Console.Write("Bạn muốn tạo mới bao nhiêu (N < 10000) mặt hàng? (Sẽ xóa kho cũ!): ");
+        
+        Console.Write("Bạn muốn tạo mới bao nhiêu mặt hàng? (Sẽ xóa kho cũ!): ");
         int n;
 
         if (int.TryParse(Console.ReadLine(), out n) == false || n <= 0)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Số lượng N không hợp lệ.");
-            Console.ResetColor();
-            return;
-        }
-
-        // <<< THAY ĐỔI >>> Kiểm tra n < 10000
-        if (n >= 10000)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Lỗi: N phải nhỏ hơn 10000.");
             Console.ResetColor();
             return;
         }
@@ -454,8 +453,7 @@ public class Program
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Thêm thành công!");
                 Console.ResetColor();
-                // THAY BẰNG DÒNG NÀY:
-                InToanBo(); // Gọi hàm in toàn bộ danh sách
+                InToanBo(); 
             }
             else
             {
@@ -471,13 +469,72 @@ public class Program
             Console.ResetColor();
         }
     }
+    /// <summary>
+    /// Chức năng 9: Kiểm tra và cảnh báo tồn kho thấp
+    /// </summary>
+    private static void KiemTraTonKhoThap()
+    {
+        Console.Write("Nhập mức tồn kho tối thiểu để cảnh báo (mặc định: 10): ");
+        string input = Console.ReadLine();
 
+        int mucTonKho;
+
+        if (int.TryParse(input, out mucTonKho) == false || input == "")
+        {
+            mucTonKho = 10; 
+        }
+
+        Console.WriteLine("...Đang tìm các mặt hàng có số lượng tồn <= " + mucTonKho);
+
+        List<MatHang> danhSach = _quanLySieuThi.LayToanBoMatHang();
+
+        int dem = 0;
+
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("--- CÁC MẶT HÀNG CÓ TỒN KHO THẤP ---");
+
+        foreach (MatHang mh in danhSach)
+        {
+            if (mh.SoLuongTon <= mucTonKho)
+            {
+                Console.WriteLine(mh.ToString());
+                dem = dem + 1; 
+            }
+        }
+
+        Console.ResetColor(); 
+
+        if (dem == 0)
+        {
+            Console.WriteLine("Tốt! Không tìm thấy mặt hàng nào có tồn kho thấp.");
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("--- Tổng cộng có " + dem + " mặt hàng cần chú ý ---");
+            Console.ResetColor();
+        }
+    }
     private static void TimTheoMa()
     {
-        Console.Write("Nhập mã mặt hàng cần tìm: ");
-        string ma = Console.ReadLine();
+        Console.Write("Nhập mã mặt hàng (hoặc chỉ SỐ) cần tìm: ");
+        string input = Console.ReadLine();
 
-        MatHang mhTimDuoc = _quanLySieuThi.TimTheoMa(ma);
+        string maCanTim;
+
+        int soThuTu;
+        if (int.TryParse(input, out soThuTu))
+        {
+            maCanTim = "MH" + soThuTu.ToString("D8");
+        }
+        else
+        {
+            maCanTim = input;
+        }
+
+        Console.WriteLine("...Đang tìm kiếm mã chuẩn: " + maCanTim);
+
+        MatHang mhTimDuoc = _quanLySieuThi.TimTheoMa(maCanTim);
 
         if (mhTimDuoc.MaMatHang != null)
         {
@@ -489,7 +546,7 @@ public class Program
         else
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Không tìm thấy mặt hàng có mã '" + ma + "'.");
+            Console.WriteLine("Không tìm thấy mặt hàng có mã '" + maCanTim + "'.");
             Console.ResetColor();
         }
     }
@@ -631,10 +688,9 @@ public class Program
         }
     }
 
-    // <<< THAY ĐỔI >>> Toàn bộ hàm này đã được viết lại
     private static void LietKeToHop()
     {
-        // Lấy N (kho)
+       
         List<MatHang> danhSachDayDu = _quanLySieuThi.LayToanBoMatHang();
         int n_kho = danhSachDayDu.Count;
 
@@ -647,9 +703,8 @@ public class Program
             return;
         }
 
-        // --- Bước 1: Hỏi n (tập con) ---
         Console.Write("Bạn muốn lấy bao nhiêu sản phẩm (n) từ kho để tạo combo? (n <= " + n_kho + "): ");
-        int n_tapCon; // Đây là 'n' mới mà bạn muốn
+        int n_tapCon;
         if (int.TryParse(Console.ReadLine(), out n_tapCon) == false || n_tapCon <= 0 || n_tapCon > n_kho)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -657,10 +712,9 @@ public class Program
             Console.ResetColor();
             return;
         }
-
-        // --- Bước 2: Hỏi m (combo) ---
+        
         Console.Write("Từ " + n_tapCon + " sản phẩm đó, bạn muốn một combo chứa bao nhiêu sản phẩm (m)? (m <= " + n_tapCon + "): ");
-        int m_combo; // Đây là 'm'
+        int m_combo; 
         if (int.TryParse(Console.ReadLine(), out m_combo) == false || m_combo <= 0 || m_combo > n_tapCon)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -669,7 +723,6 @@ public class Program
             return;
         }
 
-        // --- Bước 3: Cảnh báo ---
         if (n_tapCon > 20) // Luôn cảnh báo nếu n (tập con) > 20
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
@@ -685,16 +738,11 @@ public class Program
             Console.ResetColor();
         }
 
-        // --- Bước 4: Tạo danh sách con ---
-        // Chúng ta sẽ lấy n_tapCon sản phẩm đầu tiên từ kho
         List<MatHang> danhSachCon = new List<MatHang>();
         for (int i = 0; i < n_tapCon; i++)
         {
             danhSachCon.Add(danhSachDayDu[i]);
         }
-
-        // --- Bước 5: Chạy thuật toán ---
-        // Gọi hàm static, truyền vào DANH SÁCH CON và M
         ThuVienToHop.LietKeVaInToHop(danhSachCon, m_combo);
     }
 

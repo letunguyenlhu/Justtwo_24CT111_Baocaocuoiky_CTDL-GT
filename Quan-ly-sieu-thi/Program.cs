@@ -795,7 +795,7 @@ public class Program
         Console.WriteLine("--- CHỨC NĂNG COMBO ---");
         Console.WriteLine("1. Tạo Combo thủ công (Bạn tự chọn sản phẩm)");
         Console.WriteLine("2. Tìm Combo theo mức giá (Ngẫu nhiên)");
-        Console.WriteLine("3. Tạo combo tự động (Liệt kê TẤT CẢ tổ hợp có thể với số sản phẩm bạn chọn ");
+        Console.WriteLine("3. Tạo combo tự động (Liệt kê TẤT CẢ tổ hợp có thể với số sản phẩm bạn chọn)");
         Console.WriteLine("0. Quay lại menu chính");
         Console.Write("Vui lòng chọn: ");
 

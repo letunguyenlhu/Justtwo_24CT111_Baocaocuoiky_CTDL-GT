@@ -6,3 +6,11 @@ D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.csproj.CoreCompil
 D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.exe
 D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.pdb
 D:\CTDL_GT\Justtwo\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.exe.config
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\bin\Debug\Quan-ly-sieu-thi.exe.config
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\bin\Debug\Quan-ly-sieu-thi.exe
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\bin\Debug\Quan-ly-sieu-thi.pdb
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.csproj.AssemblyReference.cache
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.exe.config
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.csproj.CoreCompileInputs.cache
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.exe
+D:\Code\Justtwo_24CT111_Baocaocuoiky_CTDL-GT\Quan-ly-sieu-thi\obj\Debug\Quan-ly-sieu-thi.pdb

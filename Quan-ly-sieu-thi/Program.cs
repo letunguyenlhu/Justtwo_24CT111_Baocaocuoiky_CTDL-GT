@@ -1,7 +1,7 @@
-﻿// Bước 1: Khai báo các thư viện chuẩn
-using System;
+﻿using System;
 using System.Collections.Generic; // Cho Dictionary, List
 using System.Text;            // Cho Console.OutputEncoding
+using System.Globalization; // Cho việc xử lý Ngày/Tháng (DateTime)
 
 // ===== Bắt đầu Định nghĩa các Kiểu Dữ liệu và Class =====
 
@@ -12,17 +12,17 @@ using System.Text;            // Cho Console.OutputEncoding
 /// </summary>
 public struct MatHang
 {
-    // Biến công khai (public fields)
     public string MaMatHang;
     public string Ten;
     public string DonViTinh;
     public decimal DonGia;
     public int SoLuongTon;
+    public DateTime HanSuDung; 
 
     /// <summary>
     /// Constructor (hàm khởi tạo) để gán giá trị và kiểm tra (validate)
     /// </summary>
-    public MatHang(string ma, string ten, string dvt, decimal gia, int sl)
+    public MatHang(string ma, string ten, string dvt, decimal gia, int sl, DateTime hsd) 
     {
         if (string.IsNullOrWhiteSpace(ma))
             throw new Exception("Lỗi: Mã mặt hàng không được để trống.");
@@ -32,18 +32,24 @@ public struct MatHang
             throw new Exception("Lỗi: Đơn giá không được âm.");
         if (sl < 0)
             throw new Exception("Lỗi: Số lượng tồn không được âm.");
+        if (hsd.Year < 2000) 
+            throw new Exception("Lỗi: Hạn sử dụng không hợp lệ.");
 
         this.MaMatHang = ma;
         this.Ten = ten;
         this.DonViTinh = dvt;
         this.DonGia = gia;
         this.SoLuongTon = sl;
+        this.HanSuDung = hsd; 
     }
+
     public override string ToString()
     {
+        string hsdString = HanSuDung.ToString("dd/MM/yyyy");
+
         return "[Mã: " + MaMatHang + "] - Tên: " + Ten +
                " (ĐVT: " + DonViTinh + ") - Giá: " + DonGia +
-               " VNĐ - Tồn: " + SoLuongTon;
+               " VNĐ - Tồn: " + SoLuongTon + " - HSD: " + hsdString; 
     }
 }
 
@@ -53,30 +59,26 @@ public struct MatHang
 
 /// <summary>
 /// Lớp 'QuanLySieuThi' (dùng class) để quản lý kho hàng.
+/// <<< Sử dụng StringComparer để không phân biệt hoa/thường >>>
 /// </summary>
 public class QuanLySieuThi
 {
     private Dictionary<string, MatHang> _khoHang;
-
-    /// <summary>
-    /// Hàm khởi tạo của lớp QuanLySieuThi.
-    /// </summary>
     public QuanLySieuThi()
     {
         _khoHang = new Dictionary<string, MatHang>(StringComparer.OrdinalIgnoreCase);
     }
-
-    /// <summary>
-    /// (Public) Thêm một mặt hàng mới.
-    /// </summary>
     public bool ThemMatHang(MatHang mh)
     {
         if (_khoHang.ContainsKey(mh.MaMatHang))
         {
             return false;
         }
-        _khoHang.Add(mh.MaMatHang, mh);
-        return true;
+        else
+        {
+            _khoHang.Add(mh.MaMatHang, mh);
+            return true;
+        }
     }
 
     /// <summary>
@@ -101,9 +103,9 @@ public class QuanLySieuThi
     /// </summary>
     public MatHang TimTheoMa(string ma)
     {
-        if (_khoHang.ContainsKey(ma))
+        if (_khoHang.TryGetValue(ma, out MatHang mh))
         {
-            return _khoHang[ma];
+            return mh; 
         }
         return new MatHang(); // Trả về struct rỗng
     }
@@ -172,13 +174,8 @@ public class QuanLySieuThi
 #endregion
 
 #region 3. Lớp Thuật toán Tổ hợp (Algorithm)
-
-/// <summary>
-/// Lớp 'static' (tĩnh) chứa thuật toán liệt kê tổ hợp C(n, m).
-/// </summary>
 public static class ThuVienToHop
 {
-    // Biến đếm (nằm ngoài) để theo dõi
     private static long _demToHop;
 
     /// <summary>
@@ -190,29 +187,31 @@ public static class ThuVienToHop
 
         if (danhSachNguon == null || m <= 0 || m > n_tapCon)
         {
-            Console.WriteLine("Dữ liệu không hợp lệ để tạo tổ hợp.");
+            Console.WriteLine("Dữ liệu không hợp lệ để tính tổ hợp.");
             return;
         }
 
         List<MatHang> comboHienTai = new List<MatHang>();
         _demToHop = 0;
 
-        Console.WriteLine("--- Bắt đầu liệt kê combo C(" + n_tapCon + ", " + m + ") ---");
+        Console.WriteLine("--- Bắt đầu liệt kê C(" + n_tapCon + ", " + m + ") ---");
 
-        LietKeRecursive(danhSachNguon, m, 0, comboHienTai);
+        LietKeRecursive_Public(danhSachNguon, m, 0, comboHienTai);
 
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("--- Hoàn thành. Tìm thấy " + _demToHop + " tổ hợp. ---");
         Console.ResetColor();
     }
 
-    private static void LietKeRecursive(
+    /// <summary>
+    /// Hàm đệ quy, dùng để tìm tất cả tổ hợp.
+    /// </summary>
+    public static void LietKeRecursive_Public(
         List<MatHang> danhSachNguon,
         int m,
         int indexBatDau,
         List<MatHang> comboHienTai)
     {
-        // 1. Điều kiện dừng: Đã tìm đủ m phần tử
         if (comboHienTai.Count == m)
         {
             _demToHop++;
@@ -231,25 +230,24 @@ public static class ThuVienToHop
             }
             Console.WriteLine(" | Tổng giá: " + tongGia);
 
-            return; // Dừng nhánh đệ quy này
+            return;
         }
 
-        // 2. Bước đệ quy
         for (int i = indexBatDau; i < danhSachNguon.Count; i++)
         {
             comboHienTai.Add(danhSachNguon[i]);
-            LietKeRecursive(danhSachNguon, m, i + 1, comboHienTai);
-            // 3. Quay lui (Backtrack)
+            LietKeRecursive_Public(danhSachNguon, m, i + 1, comboHienTai);
             comboHienTai.RemoveAt(comboHienTai.Count - 1);
         }
     }
 }
 
 #endregion
+
 #region 4. Lớp Tạo Dữ liệu Mẫu (Utility)
 
 /// <summary>
-/// Lớp 'static' (tĩnh) để tạo dữ liệu mẫu ngẫu nhiên.
+/// Lớp để tạo dữ liệu mẫu ngẫu nhiên.
 /// </summary>
 public static class TestDataGenerator
 {
@@ -274,20 +272,28 @@ public static class TestDataGenerator
                 decimal gia = _random.Next(5000, 500000);
 
                 int tonKho;
-               
-                int coHoi = _random.Next(1, 11); 
-
-                if (coHoi == 1) 
+                int coHoi = _random.Next(1, 11);
+                if (coHoi == 1)
                 {
-                    tonKho = _random.Next(1, 10);
+                    tonKho = _random.Next(1, 10); // 10% tồn kho thấp
                 }
-                else 
+                else
                 {
-                 
-                    tonKho = _random.Next(10, 1000);
+                    tonKho = _random.Next(10, 1000); // 90% tồn kho bình thường
                 }
 
-                danhSach.Add(new MatHang(ma, ten, dvt, gia, tonKho));
+                // Thêm 10% cơ hội hàng đã hết hạn 
+                DateTime hsd;
+                if (coHoi == 2) // 10% cơ hội hết hạn
+                {
+                    hsd = DateTime.Now.AddDays(_random.Next(-30, 0)); // Đã hết hạn 30 ngày
+                }
+                else // 90% cơ hội còn hạn
+                {
+                    hsd = DateTime.Now.AddDays(_random.Next(1, 365)); // Hết hạn trong 1 năm tới
+                }
+
+                danhSach.Add(new MatHang(ma, ten, dvt, gia, tonKho, hsd)); 
             }
             catch (Exception ex)
             {
@@ -303,7 +309,7 @@ public static class TestDataGenerator
 #region 5. Lớp Chính (Entry Point)
 
 /// <summary>
-/// Lớp 'Program' chứa hàm 'Main' - điểm khởi đầu của ứng dụng Console.
+/// Lớp 'Program' chứa hàm 'Main' 
 /// </summary>
 public class Program
 {
@@ -317,6 +323,13 @@ public class Program
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
 
+        // <<< Set culture để xử lý ngày tháng dễ hơn >>>
+        // Giúp C# hiểu ngày "25/10/2025"
+        CultureInfo ci = new CultureInfo("vi-VN");
+        System.Threading.Thread.CurrentThread.CurrentCulture = ci;
+        System.Threading.Thread.CurrentThread.CurrentUICulture = ci;
+
+
         Console.WriteLine("Chào mừng bạn đến với chương trình Quản lý Siêu thị!");
         Console.WriteLine("Kho hàng hiện đang rỗng. Hãy dùng chức năng '8' để tạo dữ liệu.");
 
@@ -324,18 +337,21 @@ public class Program
         while (dangChay)
         {
             Console.WriteLine("");
-            Console.WriteLine("===== MENU QUẢN LÝ SIÊU THỊ ABC (Đơn giản) =====");
+            Console.WriteLine("===== MENU QUẢN LÝ SIÊU THỊ ABC =====");
             int soLuongTrongKho = _quanLySieuThi.DemSoLuong();
             Console.WriteLine("Hiện có " + soLuongTrongKho + " mặt hàng (N_kho = " + soLuongTrongKho + ").");
-            Console.WriteLine("1. Thêm mặt hàng mới ");
-            Console.WriteLine("2. Tìm mặt hàng theo Mã ");
+            Console.WriteLine("1. Thêm mặt hàng mới");
+            Console.WriteLine("2. Tìm mặt hàng theo Mã (hoặc số)");
             Console.WriteLine("3. Tìm mặt hàng theo Tên");
             Console.WriteLine("4. Cập nhật mặt hàng (theo Mã)");
             Console.WriteLine("5. Xóa mặt hàng (theo Mã)");
-            Console.WriteLine("6. Chức năng Combo (Tùy chọn)");
+            Console.WriteLine("6. Tạo Combo");
             Console.WriteLine("7. In toàn bộ danh sách");
             Console.WriteLine("8. Tạo dữ liệu ngẫu nhiên (test)");
             Console.WriteLine("9. Cảnh báo tồn kho thấp");
+            Console.WriteLine("10. Thanh toán Giỏ hàng");
+            Console.WriteLine("11. Báo cáo & Thống kê ");
+            Console.WriteLine("12. Kiểm tra Hàng sắp hết hạn ");
             Console.WriteLine("0. Thoát");
             Console.Write("Vui lòng chọn chức năng: ");
 
@@ -344,33 +360,18 @@ public class Program
 
             switch (luaChon)
             {
-                case "1":
-                    ThemMatHang();
-                    break;
-                case "2":
-                    TimTheoMa();
-                    break;
-                case "3":
-                    TimTheoTen();
-                    break;
-                case "4":
-                    CapNhatMatHang();
-                    break;
-                case "5":
-                    XoaMatHang();
-                    break;
-                case "6":                    
-                    MenuChucNangCombo();
-                    break;
-                case "7":
-                    InToanBo();
-                    break;
-                case "8":
-                    TaoNgauNhienDuLieu();
-                    break;
-                case "9":
-                    KiemTraTonKhoThap();
-                    break;
+                case "1": ThemMatHang(); break;
+                case "2": TimTheoMa(); break;
+                case "3": TimTheoTen(); break;
+                case "4": CapNhatMatHang(); break;
+                case "5": XoaMatHang(); break;
+                case "6": MenuChucNangCombo(); break;
+                case "7": InToanBo(); break;
+                case "8": TaoNgauNhienDuLieu(); break;
+                case "9": KiemTraTonKhoThap(); break;
+                case "10": ThanhToanGioHang(); break;
+                case "11": BaoCaoThongKe(); break;
+                case "12": KiemTraHanSuDung(); break;
                 case "0":
                     dangChay = false;
                     Console.WriteLine("Đã thoát chương trình.");
@@ -383,13 +384,8 @@ public class Program
             }
         }
     }
-
-    // ----- Các hàm xử lý Menu (private static) -----
-
-    /// <summary>
-    /// Chuẩn hóa input của người dùng (ví dụ: "123") thành mã (ví dụ: "MH00000123")
-    /// </summary>
-    private static string ChuanHoaMa(string input)
+//Hàm xử lý Menu
+    public static string ChuanHoaMa(string input)
     {
         int soThuTu;
         if (int.TryParse(input, out soThuTu))
@@ -405,9 +401,9 @@ public class Program
     /// <summary>
     /// Chức năng 8: Tạo N dữ liệu ngẫu nhiên
     /// </summary>
-    private static void TaoNgauNhienDuLieu()
+    public static void TaoNgauNhienDuLieu()
     {
-        Console.Write("Bạn muốn tạo mới bao nhiêu (N) mặt hàng? (Sẽ xóa kho cũ!): ");
+        Console.Write("Bạn muốn tạo mới bao nhiêu mặt hàng? (Sẽ xóa kho cũ!): ");
         int n;
 
         if (int.TryParse(Console.ReadLine(), out n) == false || n <= 0)
@@ -421,7 +417,6 @@ public class Program
         try
         {
             Console.WriteLine("Đang xóa kho cũ...");
-         
             _quanLySieuThi = new QuanLySieuThi();
 
             Console.WriteLine("Đang tạo " + n + " dữ liệu mới... Vui lòng đợi.");
@@ -441,10 +436,10 @@ public class Program
         }
     }
 
+
     /// <summary>
-    /// Chức năng 1: Thêm mặt hàng 
-    /// </summary>
-    private static void ThemMatHang()
+    /// Chức năng 1: Thêm thủ công 
+    public static void ThemMatHang()
     {
         Console.Write("Bạn muốn thêm bao nhiêu mặt hàng?: ");
         int soLuongCanThem;
@@ -463,52 +458,49 @@ public class Program
         {
             Console.WriteLine("\n--- Đang thêm mặt hàng thứ " + (i + 1) + "/" + soLuongCanThem + " ---");
 
-            // <<< THAY ĐỔI 1: Thêm vòng lặp while(true) bên trong for >>>
-            // Vòng lặp này dùng để hỏi mã, nó chỉ thoát ra khi
-            // 1. Nhập được mã hợp lệ
-            // 2. Người dùng chọn "Bỏ qua"
-
-            string ma; // Biến lưu mã
-            bool daBoQua = false; // Cờ (flag) để biết người dùng có chọn bỏ qua không
+            string ma; // Biến lưu mã NHẬP VÀO
+            string maChuan; // Biến lưu mã ĐÃ CHUẨN HÓA
+            bool daBoQua = false;
 
             while (true) // Vòng lặp hỏi mã
             {
-                Console.Write("Nhập mã mặt hàng (duy nhất): ");
+                Console.Write("Nhập mã mặt hàng (hoặc chỉ SỐ): ");
                 ma = Console.ReadLine();
 
-                string maChuan = ChuanHoaMa(ma);
-                MatHang mhTimChuan = _quanLySieuThi.TimTheoMa(maChuan);
-                MatHang mhTimGoc = _quanLySieuThi.TimTheoMa(ma);
+                maChuan = ChuanHoaMa(ma);
+                Console.WriteLine("-> Mã chuẩn sẽ là: " + maChuan); // Thông báo cho người dùng
 
-                if (mhTimChuan.MaMatHang == null && mhTimGoc.MaMatHang == null)
+                // Kiểm tra mã chuẩn có tồn tại không
+                MatHang mhTimChuan = _quanLySieuThi.TimTheoMa(maChuan);
+
+                if (mhTimChuan.MaMatHang == null)
                 {
                     // Mã hợp lệ, không trùng
-                    break; // Thoát khỏi vòng lặp `while(true)` để hỏi tên, giá...
+                    ma = maChuan; 
+                    break; // Thoát khỏi vòng lặp `while(true)`
                 }
 
                 // Nếu mã bị trùng:
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Lỗi: Mã '" + ma + "' (mã chuẩn '" + maChuan + "') đã tồn tại.");
+                Console.WriteLine("Lỗi: Mã chuẩn '" + maChuan + "' đã tồn tại.");
                 Console.ResetColor();
                 Console.Write("Bạn muốn: [1] Nhập lại mã | [2] Bỏ qua mặt hàng này?: ");
 
                 string luaChon = Console.ReadLine();
                 if (luaChon == "2")
                 {
-                    daBoQua = true; 
-                    break; 
+                    daBoQua = true;
+                    break;
                 }
-
-                // Nếu không chọn "2" (hoặc chọn "1", hoặc nhập lung tung)
-                // thì vòng lặp 'while(true)' sẽ tự động lặp lại, hỏi lại mã.
                 Console.WriteLine("...Vui lòng nhập lại mã...");
-            }
+            } // Kết thúc vòng lặp while(true) hỏi mã
+
             if (daBoQua == true)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Đã bỏ qua mặt hàng thứ " + (i + 1) + ".");
                 Console.ResetColor();
-                continue; 
+                continue; // Bỏ qua phần còn lại của vòng `for`, chuyển sang (i+1)
             }
 
             try
@@ -521,13 +513,29 @@ public class Program
                 decimal gia = decimal.Parse(Console.ReadLine());
                 Console.Write("Nhập số lượng tồn: ");
                 int sl = int.Parse(Console.ReadLine());
+                DateTime hsd;
+                while (true)
+                {
+                    Console.Write("Nhập Hạn Sử Dụng (ví dụ: 31/12/2025): ");
+                    string hsdString = Console.ReadLine();
+                    if (DateTime.TryParseExact(hsdString, "d/M/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out hsd))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Lỗi: Định dạng ngày không đúng. Vui lòng nhập theo dạng Ngày/Tháng/Năm.");
+                        Console.ResetColor();
+                    }
+                }
 
-                MatHang mh = new MatHang(ma, ten, dvt, gia, sl);
+                MatHang mh = new MatHang(ma, ten, dvt, gia, sl, hsd);
 
                 if (_quanLySieuThi.ThemMatHang(mh))
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Thêm thành công: " + ten);
+                    Console.WriteLine("Thêm thành công: " + ten + " (Mã: " + ma + ")"); 
                     Console.ResetColor();
                     soLuongThanhCong++;
                 }
@@ -536,23 +544,23 @@ public class Program
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Lỗi: Không thể thêm mặt hàng (lỗi không xác định).");
                     Console.ResetColor();
-                    continue; // Bỏ qua
+                    continue;
                 }
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Lỗi nhập liệu (Tên/Giá/SL): " + ex.Message);
+                Console.WriteLine("Lỗi nhập liệu (Tên/Giá/SL/HSD): " + ex.Message);
                 Console.WriteLine("Bỏ qua mặt hàng này.");
                 Console.ResetColor();
-                continue; // Bỏ qua
+                continue;
             }
         } // Kết thúc vòng lặp for
 
         // In kết quả
         if (soLuongThanhCong > 0)
         {
-            Console.WriteLine("\nĐã thêm thành công " + soLuongThanhCong + " mặt hàng. Danh sách mặt hàng hiện có:");
+            Console.WriteLine("\nĐã thêm thành công " + soLuongThanhCong + " mặt hàng. In lại danh sách:");
             InToanBo();
         }
         else
@@ -564,15 +572,13 @@ public class Program
     /// <summary>
     /// Chức năng 2: Tìm theo mã 
     /// </summary>
-    private static void TimTheoMa()
+    public static void TimTheoMa()
     {
         Console.Write("Nhập mã mặt hàng (hoặc chỉ SỐ) cần tìm: ");
         string input = Console.ReadLine();
-
         string maCanTim = ChuanHoaMa(input);
 
         Console.WriteLine("...Đang tìm kiếm mã chuẩn: " + maCanTim);
-
         MatHang mhTimDuoc = _quanLySieuThi.TimTheoMa(maCanTim);
 
         if (mhTimDuoc.MaMatHang != null)
@@ -593,7 +599,7 @@ public class Program
     /// <summary>
     /// Chức năng 3: Tìm theo tên
     /// </summary>
-    private static void TimTheoTen()
+    public static void TimTheoTen()
     {
         Console.Write("Nhập tên mặt hàng cần tìm: ");
         string ten = Console.ReadLine();
@@ -621,13 +627,11 @@ public class Program
     /// <summary>
     /// Chức năng 4: Cập nhật
     /// </summary>
-    private static void CapNhatMatHang()
+    public static void CapNhatMatHang()
     {
         Console.Write("Nhập mã mặt hàng (hoặc số) cần cập nhật: ");
         string input = Console.ReadLine();
-
         string maCanTim = ChuanHoaMa(input);
-
         MatHang mhCanSua = _quanLySieuThi.TimTheoMa(maCanTim);
 
         if (mhCanSua.MaMatHang == null)
@@ -671,7 +675,21 @@ public class Program
                 mhCanSua.SoLuongTon = int.Parse(slMoiStr);
             }
 
-            // Dùng mã gốc (mhCanSua.MaMatHang) để cập nhật
+            Console.Write("HSD mới (cũ: " + mhCanSua.HanSuDung.ToString("dd/MM/yyyy") + ") (Nhập dd/MM/yyyy): ");
+            string hsdString = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(hsdString) == false)
+            {
+                DateTime hsdMoi;
+                if (DateTime.TryParseExact(hsdString, "d/M/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out hsdMoi))
+                {
+                    mhCanSua.HanSuDung = hsdMoi;
+                }
+                else
+                {
+                    Console.WriteLine("...Định dạng ngày sai, giữ HSD cũ...");
+                }
+            }
+
             if (_quanLySieuThi.CapNhatMatHang(mhCanSua.MaMatHang, mhCanSua))
             {
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -697,11 +715,10 @@ public class Program
     /// <summary>
     /// Chức năng 5: Xóa
     /// </summary>
-    private static void XoaMatHang()
+    public static void XoaMatHang()
     {
         Console.Write("Nhập mã mặt hàng (hoặc số) cần XÓA: ");
         string input = Console.ReadLine();
-
         string maCanTim = ChuanHoaMa(input);
 
         MatHang mh = _quanLySieuThi.TimTheoMa(maCanTim);
@@ -722,7 +739,6 @@ public class Program
 
         if (xacNhan.ToUpper() == "YES")
         {
-            // Dùng mã gốc (mh.MaMatHang) để xóa
             if (_quanLySieuThi.XoaMatHang(mh.MaMatHang))
             {
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -745,7 +761,7 @@ public class Program
     /// <summary>
     /// Chức năng 9: Tồn kho thấp
     /// </summary>
-    private static void KiemTraTonKhoThap()
+    public static void KiemTraTonKhoThap()
     {
         Console.Write("Nhập mức tồn kho tối thiểu để cảnh báo (mặc định: 10): ");
         string input = Console.ReadLine();
@@ -785,17 +801,17 @@ public class Program
     }
 
 
-    // <<< NHÓM HÀM CHO CHỨC NĂNG 6 >>>
+    // <<< NHÓM HÀM CHO CHỨC NĂNG 6 (COMBO) >>>
 
     /// <summary>
     /// (Menu chính của Chức năng 6)
     /// </summary>
-    private static void MenuChucNangCombo()
+    public static void MenuChucNangCombo()
     {
         Console.WriteLine("--- CHỨC NĂNG COMBO ---");
-        Console.WriteLine("1. Tạo Combo thủ công (Bạn tự chọn sản phẩm)");
-        Console.WriteLine("2. Tìm Combo theo mức giá (Ngẫu nhiên)");
-        Console.WriteLine("3. Tạo combo tự động (Liệt kê TẤT CẢ tổ hợp có thể với số sản phẩm bạn chọn)");
+        Console.WriteLine("1. Tạo Combo thủ công");
+        Console.WriteLine("2. Tìm Combo theo mức giá");
+        Console.WriteLine("3. Liệt kê TẤT CẢ tổ hợp với mặt hàng bạn chọn");
         Console.WriteLine("0. Quay lại menu chính");
         Console.Write("Vui lòng chọn: ");
 
@@ -803,17 +819,10 @@ public class Program
 
         switch (luaChon)
         {
-            case "1":
-                TaoComboThuCong();
-                break;
-            case "2":
-                TimComboTheoGia();
-                break;
-            case "3":
-                LietKeToHopNangCao();
-                break;
-            case "0":
-                break;
+            case "1": TaoComboThuCong(); break;
+            case "2": TimComboTheoGia(); break;
+            case "3": LietKeToHopNangCao(); break;
+            case "0": break;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Lựa chọn không hợp lệ.");
@@ -823,9 +832,9 @@ public class Program
     }
 
     /// <summary>
-    /// (Logic 6.1) Người dùng tự xây dựng combo 
+    /// (Logic 6.1) Người dùng tự xây dựng combo
     /// </summary>
-    private static void TaoComboThuCong()
+    public static void TaoComboThuCong()
     {
         List<MatHang> comboHienTai = new List<MatHang>();
         decimal tongGia = 0;
@@ -833,17 +842,16 @@ public class Program
         Console.WriteLine("--- BẮT ĐẦU XÂY DỰNG COMBO ---");
         Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN (hoặc 'xong' để kết thúc).");
 
-        while (true) // Vòng lặp thêm sản phẩm
+        while (true)
         {
             Console.Write("Nhập SP [" + comboHienTai.Count + "] (hoặc 'xong'): ");
             string input = Console.ReadLine();
 
             if (input.ToUpper() == "XONG")
             {
-                break; // Thoát (Không hỏi lại)
+                break; // Thoát 
             }
 
-            // --- Logic tìm kiếm ---
             MatHang mhTimDuoc = new MatHang();
             bool daTimThay = false;
 
@@ -866,7 +874,6 @@ public class Program
                 }
                 else if (ketQuaTimTen.Count > 1)
                 {
-                    // In ra danh sách bị trùng tên
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("  Tìm thấy " + ketQuaTimTen.Count + " SP chứa tên '" + input + "'. Vui lòng dùng MÃ (hoặc số) để chọn:");
                     foreach (MatHang mh_trung in ketQuaTimTen)
@@ -882,11 +889,9 @@ public class Program
                     Console.ResetColor();
                 }
             }
-            // --- Kết thúc logic tìm kiếm ---
 
             if (daTimThay == true)
             {
-                // Kiểm tra xem đã có trong combo chưa
                 bool daCoTrongCombo = false;
                 foreach (MatHang mh_co in comboHienTai)
                 {
@@ -913,9 +918,8 @@ public class Program
                     Console.ResetColor();
                 }
             }
-        } // Kết thúc vòng lặp while
+        }
 
-        // In kết quả
         Console.WriteLine("\n--- COMBO CỦA BẠN ĐÃ HOÀN TẤT ---");
         if (comboHienTai.Count > 0)
         {
@@ -936,7 +940,7 @@ public class Program
     /// <summary>
     /// (Logic 6.2) Tìm combo ngẫu nhiên theo mức giá
     /// </summary>
-    private static void TimComboTheoGia()
+    public static void TimComboTheoGia()
     {
         try
         {
@@ -956,7 +960,6 @@ public class Program
                 return;
             }
 
-            // --- Xáo trộn (Shuffle) kho hàng ---
             Random rng = new Random();
             int n = khoHang.Count;
             while (n > 1)
@@ -967,7 +970,6 @@ public class Program
                 khoHang[k] = khoHang[n];
                 khoHang[n] = temp;
             }
-            // --- Kết thúc xáo trộn ---
 
             List<MatHang> comboTimDuoc = new List<MatHang>();
             decimal tongGia = 0;
@@ -995,7 +997,7 @@ public class Program
             else
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\nKhông tìm thấy combo phù hợp sau 1 lần thử ngẫu nhiên.");
+                Console.WriteLine("\nKhông tìm thấy combo phù hợp với giá bạn đưa ra.");
                 Console.ResetColor();
             }
         }
@@ -1008,9 +1010,9 @@ public class Program
     }
 
     /// <summary>
-    /// (Logic 6.3) Liệt kê TẤT CẢ tổ hợp 
+    /// (Logic 6.3) Liệt kê TẤT CẢ tổ hợp C(n, m)
     /// </summary>
-    private static void LietKeToHopNangCao()
+    public static void LietKeToHopNangCao()
     {
         int n_kho = _quanLySieuThi.DemSoLuong();
         if (n_kho == 0)
@@ -1021,42 +1023,33 @@ public class Program
             return;
         }
 
-        // --- Bước 1: Hỏi mục tiêu (n) ---
         List<MatHang> danhSachCon = new List<MatHang>();
-
         Console.WriteLine("--- Bước 1: Xây dựng tập sản phẩm (n) ---");
-        Console.Write("Bạn muốn chọn bao nhiêu sản phẩm để tạo combo (n)? (Bỏ trống để không giới hạn): ");
+        Console.Write("Bạn muốn danh sách các sản phẩm có thể tạo Combo (n) có bao nhiêu sản phẩm? (Bỏ trống để không giới hạn): ");
         string input_n = Console.ReadLine();
-        int n_mucTieu; // Đây là số 'n' MỤC TIÊU
+        int n_mucTieu;
         if (int.TryParse(input_n, out n_mucTieu) == false || n_mucTieu <= 0)
         {
-            n_mucTieu = 0; // 0 nghĩa là không giới hạn
+            n_mucTieu = 0;
         }
 
-        Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN để thêm vào tập (n).");
+        Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN để thêm vào danh sách các sản phẩm tạo Combo (n).");
         Console.WriteLine("Nhập 'xong' để tiếp tục.");
 
 
-        while (true) // Vòng lặp xây dựng tập n
+        while (true)
         {
-            // Hiển thị tiến độ (ví dụ: [3/5])
             string thongBaoTienDo;
             if (n_mucTieu > 0)
-            {
                 thongBaoTienDo = "SP [" + danhSachCon.Count + "/" + n_mucTieu + "]";
-            }
             else
-            {
                 thongBaoTienDo = "SP [" + danhSachCon.Count + "]";
-            }
 
             Console.Write("Nhập " + thongBaoTienDo + " (hoặc 'xong'): ");
             string input = Console.ReadLine();
 
-            // --- Xử lý thoát ---
             if (input.ToUpper() == "XONG")
             {
-                // Hỏi xác nhận nếu chưa đủ số lượng n
                 if (n_mucTieu > 0 && danhSachCon.Count < n_mucTieu)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
@@ -1065,14 +1058,12 @@ public class Program
                     if (Console.ReadLine().ToUpper() != "YES")
                     {
                         Console.WriteLine("...Vui lòng nhập thêm...");
-                        continue; // Tiếp tục vòng lặp, không thoát
+                        continue;
                     }
                 }
-
-                break; // Thoát khỏi vòng lặp
+                break;
             }
 
-            // --- Logic tìm kiếm ---
             MatHang mhTimDuoc = new MatHang();
             bool daTimThay = false;
 
@@ -1095,7 +1086,6 @@ public class Program
                 }
                 else if (ketQuaTimTen.Count > 1)
                 {
-                    // In ra danh sách bị trùng tên
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("  Tìm thấy " + ketQuaTimTen.Count + " SP chứa tên '" + input + "'. Vui lòng dùng MÃ (hoặc số) để chọn:");
                     foreach (MatHang mh_trung in ketQuaTimTen)
@@ -1111,11 +1101,9 @@ public class Program
                     Console.ResetColor();
                 }
             }
-            // --- Kết thúc logic tìm kiếm ---
 
             if (daTimThay == true)
             {
-                // Kiểm tra xem đã thêm chưa
                 bool daThem = false;
                 foreach (MatHang mh_co in danhSachCon)
                 {
@@ -1133,7 +1121,6 @@ public class Program
                     Console.WriteLine("  Đã thêm: " + mhTimDuoc.Ten);
                     Console.ResetColor();
 
-                    // Nếu đã đủ số lượng n mục tiêu, tự động thoát
                     if (n_mucTieu > 0 && danhSachCon.Count == n_mucTieu)
                     {
                         Console.WriteLine("...Bạn đã chọn đủ " + n_mucTieu + " sản phẩm...");
@@ -1147,25 +1134,24 @@ public class Program
                     Console.ResetColor();
                 }
             }
-        } // Kết thúc vòng lặp while
+        }
 
-        // --- Bước 2: Nhập m (combo) ---
-        int n_thucTe = danhSachCon.Count; // n thực tế
+        int n_thucTe = danhSachCon.Count;
         if (n_thucTe == 0)
         {
             Console.WriteLine("Bạn chưa chọn sản phẩm nào (n=0). Đã hủy.");
             return;
         }
 
-        Console.WriteLine("\n--- Bước 2: Chọn số lượng sản phẩm trong từng combo (m) ---");
+        Console.WriteLine("\n--- Bước 2: Chọn số lượng (m) ---");
         int m_combo;
 
-        while (true) // Vòng lặp hỏi m
+        while (true)
         {
             Console.Write("Bạn đã chọn " + n_thucTe + " SP. Bạn muốn mỗi combo chứa bao nhiêu sản phẩm (m)? (m <= " + n_thucTe + "): ");
             if (int.TryParse(Console.ReadLine(), out m_combo) == true && m_combo > 0 && m_combo <= n_thucTe)
             {
-                break; // Nhập đúng -> thoát vòng lặp
+                break;
             }
             else
             {
@@ -1175,11 +1161,10 @@ public class Program
             }
         }
 
-        // --- Bước 3: Cảnh báo ---
         if (n_thucTe > 20)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("CẢNH BÁO: Số lượng n (số lượng sản phẩm tạo combo = " + n_thucTe + ") là lớn.");
+            Console.WriteLine("CẢNH BÁO: Số lượng n (danh sách sản phẩm = " + n_thucTe + ") là lớn.");
             Console.WriteLine("Việc liệt kê tổ hợp C(" + n_thucTe + ", " + m_combo + ") có thể mất nhiều thời gian.");
             Console.Write("Bạn có chắc muốn tiếp tục? (YES/NO): ");
 
@@ -1191,7 +1176,6 @@ public class Program
             Console.ResetColor();
         }
 
-        // --- Bước 4: Chạy thuật toán ---
         ThuVienToHop.LietKeVaInToHop(danhSachCon, m_combo);
     }
 
@@ -1199,7 +1183,7 @@ public class Program
     /// <summary>
     /// Chức năng 7: In toàn bộ
     /// </summary>
-    private static void InToanBo()
+    public static void InToanBo()
     {
         List<MatHang> danhSach = _quanLySieuThi.LayToanBoMatHang();
         Console.WriteLine("--- DANH SÁCH TOÀN BỘ " + danhSach.Count + " MẶT HÀNG ---");
@@ -1215,6 +1199,272 @@ public class Program
             }
         }
         Console.WriteLine("--- Kết thúc danh sách ---");
+    }
+
+    /// <summary>
+    /// Chức năng 10: Thanh toán Giỏ hàng 
+    /// </summary>
+    public static void ThanhToanGioHang()
+    {
+        // 1. List các sản phẩm (struct) trong giỏ
+        List<MatHang> gioHang = new List<MatHang>();
+        // 2. List số lượng mua (vì struct MatHang chỉ lưu TỒN KHO)
+        List<int> soLuongMuaList = new List<int>();
+
+        decimal tongTien = 0;
+
+        Console.WriteLine("--- BẮT ĐẦU THANH TOÁN ---");
+        Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN (hoặc 'xong' để thanh toán).");
+
+        while (true)
+        {
+            Console.Write("\nNhập SP (hoặc 'xong'): ");
+            string input = Console.ReadLine();
+
+            if (input.ToUpper() == "XONG")
+            {
+                if (gioHang.Count == 0)
+                {
+                    Console.WriteLine("Giỏ hàng rỗng. Đã hủy thanh toán.");
+                    return;
+                }
+                break; // Thoát để tính tiền
+            }
+
+            // --- 1. Tìm sản phẩm ---
+            MatHang mhTrongKho = new MatHang();
+            bool daTimThay = false;
+
+            string maCanTim = ChuanHoaMa(input);
+            MatHang mhTimBangMa = _quanLySieuThi.TimTheoMa(maCanTim);
+
+            if (mhTimBangMa.MaMatHang != null)
+            {
+                mhTrongKho = mhTimBangMa;
+                daTimThay = true;
+            }
+            else
+            {
+                List<MatHang> ketQuaTimTen = _quanLySieuThi.TimTheoTen(input);
+                if (ketQuaTimTen.Count == 1)
+                {
+                    mhTrongKho = ketQuaTimTen[0];
+                    daTimThay = true;
+                }
+                else if (ketQuaTimTen.Count > 1)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("  Tìm thấy nhiều SP. Vui lòng dùng MÃ (hoặc số) để chọn.");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("  Lỗi: Không tìm thấy sản phẩm này.");
+                    Console.ResetColor();
+                }
+            }
+
+            if (daTimThay == false)
+            {
+                continue; // Quay lại vòng lặp, hỏi SP tiếp
+            }
+
+            // --- 2. Hỏi số lượng ---
+            Console.WriteLine("  Đã tìm thấy: " + mhTrongKho.Ten + " (Tồn: " + mhTrongKho.SoLuongTon + ")");
+            if (mhTrongKho.SoLuongTon == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("  Sản phẩm này đã hết hàng!");
+                Console.ResetColor();
+                continue;
+            }
+
+            int soLuongMua;
+            while (true)
+            {
+                Console.Write("  Nhập số lượng mua: ");
+                if (int.TryParse(Console.ReadLine(), out soLuongMua) && soLuongMua > 0)
+                {
+                    if (soLuongMua <= mhTrongKho.SoLuongTon)
+                    {
+                        break; // Số lượng hợp lệ
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("  Lỗi: Kho chỉ còn " + mhTrongKho.SoLuongTon + ". Vui lòng nhập ít hơn.");
+                        Console.ResetColor();
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("  Lỗi: Số lượng không hợp lệ.");
+                    Console.ResetColor();
+                }
+            }
+
+            // --- 3. Thêm vào giỏ hàng ---
+            gioHang.Add(mhTrongKho);
+            soLuongMuaList.Add(soLuongMua);
+            tongTien = tongTien + (mhTrongKho.DonGia * soLuongMua);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("  Đã thêm " + soLuongMua + " " + mhTrongKho.DonViTinh + " " + mhTrongKho.Ten);
+            Console.WriteLine("  Tổng tạm tính: " + tongTien.ToString("N0") + " VNĐ");
+            Console.ResetColor();
+        }
+
+        // --- 4. In Hóa Đơn ---
+        Console.Clear();
+        Console.WriteLine("--- HÓA ĐƠN THANH TOÁN ---");
+        for (int i = 0; i < gioHang.Count; i++)
+        {
+            MatHang mh = gioHang[i];
+            int sl = soLuongMuaList[i];
+            decimal thanhTien = mh.DonGia * sl;
+            Console.WriteLine((i + 1) + ". " + mh.Ten + " (SL: " + sl + " x " + mh.DonGia.ToString("N0") + ") = " + thanhTien.ToString("N0") + " VNĐ");
+        }
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("------------------------------");
+        Console.WriteLine("--- TỔNG CỘNG: " + tongTien.ToString("N0") + " VNĐ ---");
+        Console.ResetColor();
+
+        // --- 5. Cập nhật Kho  ---
+        for (int i = 0; i < gioHang.Count; i++)
+        {
+            MatHang mh_da_mua = gioHang[i];
+            int sl_mua = soLuongMuaList[i];
+
+            MatHang mh_trong_kho = _quanLySieuThi.TimTheoMa(mh_da_mua.MaMatHang);
+
+            mh_trong_kho.SoLuongTon = mh_trong_kho.SoLuongTon - sl_mua;
+
+            _quanLySieuThi.CapNhatMatHang(mh_trong_kho.MaMatHang, mh_trong_kho);
+        }
+
+        Console.WriteLine("Đã cập nhật kho. Cảm ơn quý khách!");
+    }
+
+    /// <summary>
+    /// Chức năng 11: Báo cáo & Thống kê 
+    /// </summary>
+    public static void BaoCaoThongKe()
+    {
+        Console.WriteLine("--- BÁO CÁO & THỐNG KÊ KHO HÀNG ---");
+
+        List<MatHang> danhSach = _quanLySieuThi.LayToanBoMatHang();
+        if (danhSach.Count == 0)
+        {
+            Console.WriteLine("Kho rỗng, không có gì để báo cáo.");
+            return;
+        }
+
+        decimal tongGiaTriKho = 0;
+
+        // Khởi tạo biến tạm để tìm max/min
+        // Gán bằng sản phẩm đầu tiên
+        MatHang tonNhieuNhat = danhSach[0];
+        MatHang tonItNhat = danhSach[0];
+        MatHang giaTriNhat = danhSach[0];
+
+        // Dùng vòng lặp foreach để tính toán
+        foreach (MatHang mh in danhSach)
+        {
+            decimal giaTriMatHang = mh.DonGia * mh.SoLuongTon;
+
+            // 1. Tính tổng giá trị kho
+            tongGiaTriKho = tongGiaTriKho + giaTriMatHang;
+
+            // 2. Tìm tồn nhiều nhất
+            if (mh.SoLuongTon > tonNhieuNhat.SoLuongTon)
+            {
+                tonNhieuNhat = mh;
+            }
+
+            // 3. Tìm tồn ít nhất
+            if (mh.SoLuongTon < tonItNhat.SoLuongTon)
+            {
+                tonItNhat = mh;
+            }
+
+            // 4. Tìm giá trị nhất
+            decimal giaTriMax = giaTriNhat.DonGia * giaTriNhat.SoLuongTon;
+            if (giaTriMatHang > giaTriMax)
+            {
+                giaTriNhat = mh;
+            }
+        }
+
+        // In kết quả
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("\n[THỐNG KÊ TỔNG QUAN]");
+        Console.ResetColor();
+        Console.WriteLine("Tổng số loại mặt hàng (SKU): " + danhSach.Count);
+        Console.WriteLine("Tổng giá trị kho hàng: " + tongGiaTriKho.ToString("N0") + " VNĐ");
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("\n[CHI TIẾT MẶT HÀNG]");
+        Console.ResetColor();
+        Console.WriteLine("Tồn kho nhiều nhất: " + tonNhieuNhat.Ten + " (Tồn: " + tonNhieuNhat.SoLuongTon + ")");
+        Console.WriteLine("Tồn kho ít nhất:   " + tonItNhat.Ten + " (Tồn: " + tonItNhat.SoLuongTon + ")");
+        Console.WriteLine("Giá trị nhất:      " + giaTriNhat.Ten + " (Tổng giá trị: " + (giaTriNhat.DonGia * giaTriNhat.SoLuongTon).ToString("N0") + " VNĐ)");
+    }
+
+    /// <summary>
+    /// Chức năng 12: Kiểm tra Hàng sắp hết hạn 
+    /// </summary>
+    public static void KiemTraHanSuDung()
+    {
+        Console.Write("Kiểm tra hàng hết hạn trong bao nhiêu ngày tới? (ví dụ: 7): ");
+        int soNgay;
+        if (int.TryParse(Console.ReadLine(), out soNgay) == false || soNgay < 0)
+        {
+            soNgay = 7; // Mặc định 7 ngày
+        }
+
+        DateTime homNay = DateTime.Now;
+        // Chỉ lấy phần Ngày (bỏ qua Giờ, Phút, Giây) để so sánh cho chính xác
+        DateTime homNayLuc0h = homNay.Date;
+
+        DateTime ngayCanhBao = homNayLuc0h.AddDays(soNgay);
+
+        Console.WriteLine("...Đang tìm các mặt hàng có HSD từ hôm nay đến " + ngayCanhBao.ToString("dd/MM/yyyy") + "...");
+
+        List<MatHang> danhSach = _quanLySieuThi.LayToanBoMatHang();
+        int demDaHetHan = 0;
+        int demSapHetHan = 0;
+
+        // In danh sách ĐÃ HẾT HẠN (Màu Đỏ)
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("\n--- 1. DANH SÁCH ĐÃ HẾT HẠN ---");
+        foreach (MatHang mh in danhSach)
+        {
+            if (mh.HanSuDung < homNayLuc0h)
+            {
+                Console.WriteLine(mh.ToString());
+                demDaHetHan++;
+            }
+        }
+        if (demDaHetHan == 0) Console.WriteLine("(Không có)");
+
+        // In danh sách SẮP HẾT HẠN (Màu Vàng)
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("\n--- 2. DANH SÁCH SẮP HẾT HẠN (trong " + soNgay + " ngày tới) ---");
+        foreach (MatHang mh in danhSach)
+        {
+            // Điều kiện: (HSD >= hôm nay) VÀ (HSD <= ngày cảnh báo)
+            if (mh.HanSuDung >= homNayLuc0h && mh.HanSuDung <= ngayCanhBao)
+            {
+                Console.WriteLine(mh.ToString());
+                demSapHetHan++;
+            }
+        }
+        if (demSapHetHan == 0) Console.WriteLine("(Không có)");
+
+        Console.ResetColor();
+        Console.WriteLine("\n--- Tổng kết: " + demDaHetHan + " đã hết hạn, " + demSapHetHan + " sắp hết hạn. ---");
     }
 }
 

@@ -997,7 +997,7 @@ public class Program
             else
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\nKhông tìm thấy combo phù hợp (đủ giá và >= 2 SP) sau 1 lần thử ngẫu nhiên.");
+                Console.WriteLine("\nKhông tìm thấy combo phù hợp với giá đã chọn trong danh sách sản phẩm hiện tại.");
                 Console.ResetColor();
             }
         }

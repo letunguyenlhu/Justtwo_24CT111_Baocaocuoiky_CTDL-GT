@@ -5,7 +5,7 @@ using System.Globalization; // Cho việc xử lý Ngày/Tháng (DateTime)
 
 // ===== Bắt đầu Định nghĩa các Kiểu Dữ liệu và Class =====
 
-#region 1. Kiểu Dữ liệu (Model)
+#region 1. Kiểu Dữ liệu 
 
 /// <summary>
 /// Định nghĩa kiểu Mặt Hàng bằng 'struct'.
@@ -830,28 +830,26 @@ public class Program
                 break;
         }
     }
-
     /// <summary>
-    /// (Logic 6.1) Người dùng tự xây dựng combo
+    ///  6.1 Người dùng tự xây dựng combo 
     /// </summary>
-    public static void TaoComboThuCong()
+    public static void TaoComboThuCong() 
     {
         List<MatHang> comboHienTai = new List<MatHang>();
         decimal tongGia = 0;
 
-        Console.WriteLine("--- BẮT ĐẦU XÂY DỰNG COMBO ---");
+        Console.WriteLine("--- BẮT ĐẦU XÂY DỰNG COMBO (Yêu cầu >= 2 SP) ---");
         Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN (hoặc 'xong' để kết thúc).");
 
-        while (true)
+        while (true) 
         {
             Console.Write("Nhập SP [" + comboHienTai.Count + "] (hoặc 'xong'): ");
             string input = Console.ReadLine();
 
             if (input.ToUpper() == "XONG")
             {
-                break; // Thoát 
+                break; 
             }
-
             MatHang mhTimDuoc = new MatHang();
             bool daTimThay = false;
 
@@ -918,10 +916,10 @@ public class Program
                     Console.ResetColor();
                 }
             }
-        }
+        } 
 
         Console.WriteLine("\n--- COMBO CỦA BẠN ĐÃ HOÀN TẤT ---");
-        if (comboHienTai.Count > 0)
+        if (comboHienTai.Count >= 2) 
         {
             foreach (MatHang mh in comboHienTai)
             {
@@ -933,12 +931,16 @@ public class Program
         }
         else
         {
-            Console.WriteLine("(Bạn chưa chọn sản phẩm nào)");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Lỗi: Combo phải có ít nhất 2 sản phẩm.");
+            Console.WriteLine("Đã hủy combo (bạn có " + comboHienTai.Count + " sản phẩm).");
+            Console.ResetColor();
         }
     }
 
+    
     /// <summary>
-    /// (Logic 6.2) Tìm combo ngẫu nhiên theo mức giá
+    /// 6.2 Tìm combo ngẫu nhiên theo mức giá
     /// </summary>
     public static void TimComboTheoGia()
     {
@@ -954,12 +956,11 @@ public class Program
             decimal giaMin = mucGia - chenhLech;
 
             List<MatHang> khoHang = _quanLySieuThi.LayToanBoMatHang();
-            if (khoHang.Count == 0)
+            if (khoHang.Count < 2) 
             {
-                Console.WriteLine("Kho rỗng, không thể tìm.");
+                Console.WriteLine("Kho không đủ sản phẩm (dưới 2) để tạo combo.");
                 return;
             }
-
             Random rng = new Random();
             int n = khoHang.Count;
             while (n > 1)
@@ -982,11 +983,10 @@ public class Program
                     tongGia = tongGia + mh.DonGia;
                 }
             }
-
-            if (tongGia >= giaMin)
+            if (tongGia >= giaMin && comboTimDuoc.Count >= 2)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("\n--- ĐÃ TÌM THẤY 1 COMBO PHÙ HỢP ---");
+                Console.WriteLine("\n--- ĐÃ TÌM THẤY 1 COMBO PHÙ HỢP (>= 2 SP) ---");
                 foreach (MatHang mh in comboTimDuoc)
                 {
                     Console.WriteLine(mh.ToString());
@@ -997,7 +997,7 @@ public class Program
             else
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\nKhông tìm thấy combo phù hợp với giá bạn đưa ra.");
+                Console.WriteLine("\nKhông tìm thấy combo phù hợp (đủ giá và >= 2 SP) sau 1 lần thử ngẫu nhiên.");
                 Console.ResetColor();
             }
         }
@@ -1010,9 +1010,9 @@ public class Program
     }
 
     /// <summary>
-    /// (Logic 6.3) Liệt kê TẤT CẢ tổ hợp C(n, m)
+    /// 6.3 Liệt kê TẤT CẢ tổ hợp có thể C(n, m) 
     /// </summary>
-    public static void LietKeToHopNangCao()
+    public static void LietKeToHopNangCao() 
     {
         int n_kho = _quanLySieuThi.DemSoLuong();
         if (n_kho == 0)
@@ -1023,9 +1023,10 @@ public class Program
             return;
         }
 
+      
         List<MatHang> danhSachCon = new List<MatHang>();
         Console.WriteLine("--- Bước 1: Xây dựng tập sản phẩm (n) ---");
-        Console.Write("Bạn muốn danh sách các sản phẩm có thể tạo Combo (n) có bao nhiêu sản phẩm? (Bỏ trống để không giới hạn): ");
+        Console.Write("Bạn muốn chọn bao nhiêu sản phẩm trong danh sách (n) để tạo combo? (Bỏ trống để không giới hạn): ");
         string input_n = Console.ReadLine();
         int n_mucTieu;
         if (int.TryParse(input_n, out n_mucTieu) == false || n_mucTieu <= 0)
@@ -1033,17 +1034,28 @@ public class Program
             n_mucTieu = 0;
         }
 
-        Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN để thêm vào danh sách các sản phẩm tạo Combo (n).");
+        Console.WriteLine("Nhập mã SP, SỐ, hoặc TÊN để thêm vào danh sách (n).");
         Console.WriteLine("Nhập 'xong' để tiếp tục.");
 
-
-        while (true)
+        while (true) 
         {
             string thongBaoTienDo;
+            int soHienTai = danhSachCon.Count + 1; 
+
             if (n_mucTieu > 0)
-                thongBaoTienDo = "SP [" + danhSachCon.Count + "/" + n_mucTieu + "]";
+            {
+                if (danhSachCon.Count >= n_mucTieu)
+                {
+                    Console.WriteLine("...Bạn đã chọn đủ " + n_mucTieu + " sản phẩm...");
+                    break; 
+                }
+
+                thongBaoTienDo = "SP [" + soHienTai + "/" + n_mucTieu + "]";
+            }
             else
-                thongBaoTienDo = "SP [" + danhSachCon.Count + "]";
+            {
+                thongBaoTienDo = "SP [" + soHienTai + "]";
+            }
 
             Console.Write("Nhập " + thongBaoTienDo + " (hoặc 'xong'): ");
             string input = Console.ReadLine();
@@ -1134,29 +1146,29 @@ public class Program
                     Console.ResetColor();
                 }
             }
-        }
-
+        } 
         int n_thucTe = danhSachCon.Count;
-        if (n_thucTe == 0)
+        if (n_thucTe < 2) 
         {
-            Console.WriteLine("Bạn chưa chọn sản phẩm nào (n=0). Đã hủy.");
+            Console.WriteLine("Bạn đã chọn " + n_thucTe + " sản phẩm. Không đủ để tạo combo (yêu cầu >= 2). Đã hủy.");
             return;
         }
 
         Console.WriteLine("\n--- Bước 2: Chọn số lượng (m) ---");
         int m_combo;
 
-        while (true)
+        while (true) 
         {
-            Console.Write("Bạn đã chọn " + n_thucTe + " SP. Bạn muốn mỗi combo chứa bao nhiêu sản phẩm (m)? (m <= " + n_thucTe + "): ");
-            if (int.TryParse(Console.ReadLine(), out m_combo) == true && m_combo > 0 && m_combo <= n_thucTe)
+            Console.Write("Bạn đã chọn " + n_thucTe + " SP. Bạn muốn mỗi combo chứa bao nhiêu sản phẩm (m)? (2 <= m <= " + n_thucTe + "): ");
+
+            if (int.TryParse(Console.ReadLine(), out m_combo) == true && m_combo >= 2 && m_combo <= n_thucTe)
             {
-                break;
+                break; 
             }
             else
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Giá trị 'm' không hợp lệ. Vui lòng nhập m > 0 và m <= n.");
+                Console.WriteLine("Giá trị 'm' không hợp lệ. Vui lòng nhập (2 <= m <= n).");
                 Console.ResetColor();
             }
         }
@@ -1164,7 +1176,7 @@ public class Program
         if (n_thucTe > 20)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("CẢNH BÁO: Số lượng n (danh sách sản phẩm = " + n_thucTe + ") là lớn.");
+            Console.WriteLine("CẢNH BÁO: Số lượng n (danh sách sản phẩm tạo Combo = " + n_thucTe + ") là lớn.");
             Console.WriteLine("Việc liệt kê tổ hợp C(" + n_thucTe + ", " + m_combo + ") có thể mất nhiều thời gian.");
             Console.Write("Bạn có chắc muốn tiếp tục? (YES/NO): ");
 
@@ -1175,10 +1187,8 @@ public class Program
             }
             Console.ResetColor();
         }
-
         ThuVienToHop.LietKeVaInToHop(danhSachCon, m_combo);
     }
-
 
     /// <summary>
     /// Chức năng 7: In toàn bộ
